@@ -62,7 +62,7 @@ code {
     border-top: 0;
 }
 .toppad {
-    margin-top:20px;
+    margin-top:0px;
 }
 /* User Profile (bootsnipp) - over */
 
@@ -316,10 +316,10 @@ body { margin-top:20px; }
     margin: 20px;
 }
 
-/* CircleHoverEffect - over */
+/* CircleHoverEffect (selector) - over */
 
 body {
-    padding: 10px;
+    /*padding: 60px;*/
 }
 
 .btn {
@@ -330,6 +330,24 @@ body {
     margin-left:10px;
 }
 
+#odmik-top {
+    height: 2px;
+}
+#odmik-top-fp {
+    height: 65px;
+}
+#odmik-top-itm {
+    height: 10px;
+}
+#odmikNE {
+    padding: 10px 15px 0;
+}
+.itm {
+    display: inline;
+    font-weight: bold;
+}
+
+/*
 #pacient-meritve-okvir {
     display: block;
     width: 80%;
@@ -347,12 +365,6 @@ body {
     display: block;
     width: 50%;
     float: right;
-}
-#odmik-top {
-    height: 13px;
-}
-#odmik-top-fp {
-    height: 65px;
 }
 
 #grafi-okvir {
@@ -377,3 +389,4 @@ body {
     padding-left: 5%;
     background-color: lightblue;
 }
+*/
