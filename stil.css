@@ -315,7 +315,6 @@ body { margin-top:20px; }
     display: inline-block;
     margin: 20px;
 }
-
 /* CircleHoverEffect (selector) - over */
 
 body {
@@ -331,7 +330,7 @@ body {
 }
 
 #odmik-top {
-    height: 2px;
+    height: 33px;
 }
 #odmik-top-fp {
     height: 65px;
@@ -345,6 +344,49 @@ body {
 .itm {
     display: inline;
     font-weight: bold;
+}
+#pogostoIme,
+#zaporednoMestoImena,
+#visinaPacient,
+#visinaOdstopanje,
+#tezaPacient,
+#tezaOdstopanje
+ {
+    margin-left: 10px;
+    background-color: #f0ad4e;
+    display: inline;
+    padding: .2em .6em .3em;
+    font-size: 100%;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25em;
+}
+
+#itm  {
+    margin-left: 10px;
+    background-color: #f0ad4e;
+    display: inline;
+    padding: .2em .6em .3em;
+    font-size: 155%;
+    font-weight: 700;
+    line-height: 1;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: .25em;
+}
+
+.itm-pobarvaj {
+    display: block;
+    background-color: #d9edf7;
+    width: 100%;
+    height: 108%;
+    padding-left: 15px;
 }
 
 /*

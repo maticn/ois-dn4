@@ -14,8 +14,114 @@ function getSessionId() {
     return response.responseJSON.sessionId;
 }
 
+var moskaImena = [];
+var zenskaImena = [];
+var EHRvTabeli = 0;
+var itm;
+
+$(document).ready(function () {
+	$.get("stat_podatki/moska_imena.txt", function (response) {
+		moskaImena = response.toLocaleLowerCase().split('\n');
+		//console.log(moskaImena);
+	});
+	$.get("stat_podatki/zenska_imena.txt", function (response) {
+		zenskaImena = response.toLocaleLowerCase().split('\n');
+		//console.log(zenskaImena);
+	});
+
+	EHRvTabeli = $('#preberiEHRid').text();
+	//console.log(EHRvTabeli);
+
+	preberiEHRodBolnika();
+	//narisiGraf();
+
+	/* Don't forget list */
+	$("#sortable").sortable();
+	$("#sortable").disableSelection();
+
+	countTodos();
+
+	// all done btn
+	$("#checkAll").click(function(){
+		AllDone();
+	});
+
+	//create
+	$('.add-todo').on('keypress',function (e) {
+		e.preventDefault
+		if (e.which == 13) {
+			if($(this).val() != ''){
+				var todo = $(this).val();
+				createTodo(todo);
+				countTodos();
+			}else{
+				// some validation
+			}
+		}
+	});
+	// mark task as done
+	$('.todolist').on('change','#sortable li input[type="checkbox"]',function(){
+		if($(this).prop('checked')){
+			var doneItem = $(this).parent().parent().find('label').text();
+			$(this).parent().parent().parent().addClass('remove');
+			done(doneItem);
+			countTodos();
+		}
+	});
+
+	//delete done task from "already done"
+	$('.todolist').on('click','.remove-item',function(){
+		removeItem(this);
+	});
+
+	// count tasks
+	function countTodos(){
+		var count = $("#sortable li").length;
+		$('.count-todos').html(count);
+	}
+
+	//create task
+	function createTodo(text){
+		var markup = '<li class="ui-state-default"><div class="checkbox"><label><input type="checkbox" value="" />'+ text +'</label></div></li>';
+		$('#sortable').append(markup);
+		$('.add-todo').val('');
+	}
+
+	//mark task as done
+	function done(doneItem){
+		var done = doneItem;
+		var markup = '<li>'+ done +'<button class="btn btn-default btn-xs pull-right  remove-item"><span class="glyphicon glyphicon-remove"></span></button></li>';
+		$('#done-items').append(markup);
+		$('.remove').remove();
+	}
+
+	//mark all tasks as done
+	function AllDone(){
+		var myArray = [];
+
+		$('#sortable li').each( function() {
+			myArray.push($(this).text());
+		});
+
+		// add to done
+		for (i = 0; i < myArray.length; i++) {
+			$('#done-items').append('<li>' + myArray[i] + '<button class="btn btn-default btn-xs pull-right  remove-item"><span class="glyphicon glyphicon-remove"></span></button></li>');
+		}
+
+		// myArray
+		$('#sortable li').remove();
+		countTodos();
+	}
+
+	//remove done task from list
+	function removeItem(element){
+		$(element).parent().remove();
+	}
+	/* Don't forget list - over */
+});
 
 function kreirajEHRzaBolnika() {
+
 	sessionId = getSessionId();
 
 	var ime = $("#kreirajIme").val();
@@ -61,11 +167,21 @@ function kreirajEHRzaBolnika() {
 	}
 }
 
+var ime;
+var pogostoIme;
+var zaporednaStImena;
+var visina;
+var teza;
+var tabelaTeze = [];
+var tabelaTemperatur = [];
 
 function preberiEHRodBolnika() {
 	sessionId = getSessionId();
 
-	var ehrId = $("#preberiEHRid").val();
+	//var ehrId = $("#preberiEHRid").val();
+	var ehrId = EHRvTabeli;
+
+	pogostoIme = false;
 
 	if (!ehrId || ehrId.trim().length == 0) {
 		$("#preberiSporocilo").html("<span class='obvestilo label label-warning fade-in'>Prosim vnesite zahtevan podatek!");
@@ -77,16 +193,387 @@ function preberiEHRodBolnika() {
 	    	success: function (data) {
 				var party = data.party;
 				$("#preberiSporocilo").html("<span class='obvestilo label label-success fade-in'>Bolnik '" + party.firstNames + " " + party.lastNames + "', ki se je rodil '" + party.dateOfBirth + "'.</span>");
-				console.log("Bolnik '" + party.firstNames + " " + party.lastNames + "', ki se je rodil '" + party.dateOfBirth + "'.");
+				//console.log("Bolnik '" + party.firstNames + " " + party.lastNames + "', ki se je rodil '" + party.dateOfBirth + "'.");
+				var imeReturn = party.firstNames;
+				ime = imeReturn.toLocaleLowerCase();
+				//console.log(ime);
+
+				for (var i in moskaImena) {
+					if (ime === moskaImena[i]) {
+						pogostoIme = true;
+						zaporednaStImena = i;
+					}
+				}
+				for (var i in zenskaImena) {
+					if (ime === zenskaImena[i]) {
+						pogostoIme = true;
+						zaporednaStImena = i;
+					}
+				}
+				//console.log(pogostoIme);
+				//console.log(zaporednaStImena);
+
+				if (pogostoIme == true) {
+					//$("#pogostoIme").html("<span class='obvestilo label label-warning fade-in'>DA");
+					$("#pogostoIme").html("DA");
+					$("#zaporednoMestoImena").html(zaporednaStImena);
+				} else {
+					$("#pogostoIme").html("NE");
+				}
+
 			},
 			error: function(err) {
 				$("#preberiSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+				//console.log(JSON.parse(err.responseText).userMessage);
+			}
+		});
+
+		$.ajax({
+			url: baseUrl + "/demographics/ehr/" + ehrId + "/party",
+			type: 'GET',
+			headers: {"Ehr-Session": sessionId},
+			success: function (data) {
+				var party = data.party;
+				//$("#rezultatMeritveVitalnihZnakov").html("<br/><span>Pridobivanje podatkov za <b>'" + "'</b> bolnika <b>'" + party.firstNames + " " + party.lastNames + "'</b>.</span><br/><br/>");
+				$.ajax({
+					url: baseUrl + "/view/" + ehrId + "/" + "height",
+					type: 'GET',
+					headers: {"Ehr-Session": sessionId},
+					success: function (res) {
+						if (res.length > 0) {
+							var visinaTemp = res[res.length - 1];
+							visina = visinaTemp.height;
+							var odstopanje = visina - 174;
+							$("#visinaPacient").html(visina);
+							$("#visinaOdstopanje").html(odstopanje);
+						} else {
+							$("#visinaPacient").html("<span class='obvestilo label label-warning fade-in'>Ni podatka!</span>");
+						}
+					},
+					error: function () {
+						$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+						console.log(JSON.parse(err.responseText).userMessage);
+					}
+				});
+			},
+			error: function(err) {
+				$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
 				console.log(JSON.parse(err.responseText).userMessage);
 			}
 		});
-	}	
+
+		$.ajax({
+			url: baseUrl + "/demographics/ehr/" + ehrId + "/party",
+			type: 'GET',
+			headers: {"Ehr-Session": sessionId},
+			success: function (data) {
+				var party = data.party;
+				//$("#rezultatMeritveVitalnihZnakov").html("<br/><span>Pridobivanje podatkov za <b>'" + "'</b> bolnika <b>'" + party.firstNames + " " + party.lastNames + "'</b>.</span><br/><br/>");
+				$.ajax({
+					url: baseUrl + "/view/" + ehrId + "/" + "weight",
+					type: 'GET',
+					headers: {"Ehr-Session": sessionId},
+					success: function (res) {
+						if (res.length > 0) {
+							for (var i in res) {
+								tabelaTeze[i] = res[i].weight;
+								//console.log(tabelaTeze[i]);
+							}
+							var tezaTemp = res[res.length - 1];
+							teza = tezaTemp.weight;
+							var odstopanje = teza - 71;
+							//console.log(teza);
+							$("#tezaPacient").html(teza);
+							$("#tezaOdstopanje").html(odstopanje);
+
+						} else {
+							$("#tezaPacient").html("<span class='obvestilo label label-warning fade-in'>Ni podatka!</span>");
+						}
+					},
+					error: function () {
+						$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+						console.log(JSON.parse(err.responseText).userMessage);
+					}
+				});
+
+				$(function () {
+					$('#container').highcharts({
+						title: {
+							text: 'Graf telesne teže',
+							x: -20 //center
+						},
+						xAxis: {
+							categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+								'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+						},
+						yAxis: {
+							title: {
+								text: 'Teža'
+							},
+							plotLines: [{
+								value: 0,
+								width: 1,
+								color: 'red'
+							}]
+						},
+						tooltip: {
+							valueSuffix: 'kg'
+						},
+						legend: {
+							layout: 'vertical',
+							align: 'right',
+							verticalAlign: 'middle',
+							borderWidth: 0
+						},
+						series: [{
+							name: 'pacient',
+							data: tabelaTeze
+						}, {
+							name: 'povprečje',
+							data: [71.0]
+						}]
+					});
+				});
+			},
+			error: function(err) {
+				$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+				console.log(JSON.parse(err.responseText).userMessage);
+			}
+		});
+
+		$.ajax({
+			url: baseUrl + "/demographics/ehr/" + ehrId + "/party",
+			type: 'GET',
+			headers: {"Ehr-Session": sessionId},
+			success: function (data) {
+				var party = data.party;
+				//$("#rezultatMeritveVitalnihZnakov").html("<br/><span>Pridobivanje podatkov za <b>'" + tip + "'</b> bolnika <b>'" + party.firstNames + " " + party.lastNames + "'</b>.</span><br/><br/>");
+					$.ajax({
+						url: baseUrl + "/view/" + ehrId + "/" + "body_temperature",
+						type: 'GET',
+						headers: {"Ehr-Session": sessionId},
+						success: function (res) {
+							if (res.length > 0) {
+								for (var i in res) {
+									tabelaTemperatur[i] = res[i].temperature;
+									//console.log(tabelaTemperatur[i]);
+								}
+							} else {
+								$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Ni podatkov!</span>");
+							}
+						},
+						error: function () {
+							$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+							console.log(JSON.parse(err.responseText).userMessage);
+						}
+					});
+			},
+			error: function(err) {
+				$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+				console.log(JSON.parse(err.responseText).userMessage);
+			}
+		});
+	}
+	console.log("izpisi tezo");
+	for (var i in tabelaTeze) {
+		console.log(tabelaTeze[i]);
+	}
+	console.log("izpisi temperaturo");
+	for (var i in tabelaTemperatur) {
+		console.log(tabelaTemperatur[i]);
+	}
 }
 
+function izracunajITM() {
+	var visinaMeter = visina/100;
+	var visinaKvadrat = visinaMeter * visinaMeter;
+	itm = teza / visinaKvadrat;
+	$("#itm").html(itm);
+
+	if(itm < 18.5) {
+		$("#prvicA").html("<span class='itm-pobarvaj'>manj kot 18,5</span>");
+		$("#prvicB").html("<span class='itm-pobarvaj'>podhranjenost</span>");
+	} else if((itm >= 18.5) && (itm <= 25)) {
+		$("#drugicA").html("<span class='itm-pobarvaj'>od 18,5 do 25,0</span>");
+		$("#drugicB").html("<span class='itm-pobarvaj'>normalna telesna teža</span>");
+	} else if((itm >= 25,1) && (itm <= 30)) {
+		$("#tretjicA").html("<span class='itm-pobarvaj'>od 25,1 do 30,0</span>");
+		$("#tretjicB").html("<span class='itm-pobarvaj'>čezmerna telesna teža</span>");
+	} else {
+		$("#cetrticA").html("<span class='itm-pobarvaj'>30,1 in več</span>");
+		$("#cetrticB").html("<span class='itm-pobarvaj'>debelost</span>");
+	}
+}
+
+function narisiGraf () {
+	$(function () {
+		$('#container').highcharts({
+			chart: {
+				zoomType: 'x'
+			},
+			title: {
+				text: 'USD to EUR exchange rate from 2006 through 2008'
+			},
+			subtitle: {
+				text: document.ontouchstart === undefined ?
+					'Click and drag in the plot area to zoom in' :
+					'Pinch the chart to zoom in'
+			},
+			xAxis: {
+				type: 'datetime',
+				minRange: 14 * 24 * 3600000 // fourteen days
+			},
+			yAxis: {
+				title: {
+					text: 'Exchange rate'
+				}
+			},
+			legend: {
+				enabled: false
+			},
+			plotOptions: {
+				area: {
+					fillColor: {
+						linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1},
+						stops: [
+							[0, Highcharts.getOptions().colors[0]],
+							[1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+						]
+					},
+					marker: {
+						radius: 2
+					},
+					lineWidth: 1,
+					states: {
+						hover: {
+							lineWidth: 1
+						}
+					},
+					threshold: null
+				}
+			},
+
+			series: [{
+				type: 'area',
+				name: 'USD to EUR',
+				pointInterval: 24 * 3600 * 1000,
+				pointStart: Date.UTC(2006, 0, 1),
+				data: [
+					0.8446, 0.8445, 0.8444, 0.8451,    0.8418, 0.8264,    0.8258, 0.8232,    0.8233, 0.8258,
+					0.8283, 0.8278, 0.8256, 0.8292,    0.8239, 0.8239,    0.8245, 0.8265,    0.8261, 0.8269,
+					0.8273, 0.8244, 0.8244, 0.8172,    0.8139, 0.8146,    0.8164, 0.82,    0.8269, 0.8269,
+					0.8269, 0.8258, 0.8247, 0.8286,    0.8289, 0.8316,    0.832, 0.8333,    0.8352, 0.8357,
+					0.8355, 0.8354, 0.8403, 0.8403,    0.8406, 0.8403,    0.8396, 0.8418,    0.8409, 0.8384,
+					0.8386, 0.8372, 0.839, 0.84, 0.8389, 0.84, 0.8423, 0.8423, 0.8435, 0.8422,
+					0.838, 0.8373, 0.8316, 0.8303,    0.8303, 0.8302,    0.8369, 0.84, 0.8385, 0.84,
+					0.8401, 0.8402, 0.8381, 0.8351,    0.8314, 0.8273,    0.8213, 0.8207,    0.8207, 0.8215,
+					0.8242, 0.8273, 0.8301, 0.8346,    0.8312, 0.8312,    0.8312, 0.8306,    0.8327, 0.8282,
+					0.824, 0.8255, 0.8256, 0.8273, 0.8209, 0.8151, 0.8149, 0.8213, 0.8273, 0.8273,
+					0.8261, 0.8252, 0.824, 0.8262, 0.8258, 0.8261, 0.826, 0.8199, 0.8153, 0.8097,
+					0.8101, 0.8119, 0.8107, 0.8105,    0.8084, 0.8069,    0.8047, 0.8023,    0.7965, 0.7919,
+					0.7921, 0.7922, 0.7934, 0.7918,    0.7915, 0.787, 0.7861, 0.7861, 0.7853, 0.7867,
+					0.7827, 0.7834, 0.7766, 0.7751, 0.7739, 0.7767, 0.7802, 0.7788, 0.7828, 0.7816,
+					0.7829, 0.783, 0.7829, 0.7781, 0.7811, 0.7831, 0.7826, 0.7855, 0.7855, 0.7845,
+					0.7798, 0.7777, 0.7822, 0.7785, 0.7744, 0.7743, 0.7726, 0.7766, 0.7806, 0.785,
+					0.7907, 0.7912, 0.7913, 0.7931, 0.7952, 0.7951, 0.7928, 0.791, 0.7913, 0.7912,
+					0.7941, 0.7953, 0.7921, 0.7919, 0.7968, 0.7999, 0.7999, 0.7974, 0.7942, 0.796,
+					0.7969, 0.7862, 0.7821, 0.7821, 0.7821, 0.7811, 0.7833, 0.7849, 0.7819, 0.7809,
+					0.7809, 0.7827, 0.7848, 0.785, 0.7873, 0.7894, 0.7907, 0.7909, 0.7947, 0.7987,
+					0.799, 0.7927, 0.79, 0.7878, 0.7878, 0.7907, 0.7922, 0.7937, 0.786, 0.787,
+					0.7838, 0.7838, 0.7837, 0.7836, 0.7806, 0.7825, 0.7798, 0.777, 0.777, 0.7772,
+					0.7793, 0.7788, 0.7785, 0.7832, 0.7865, 0.7865, 0.7853, 0.7847, 0.7809, 0.778,
+					0.7799, 0.78, 0.7801, 0.7765, 0.7785, 0.7811, 0.782, 0.7835, 0.7845, 0.7844,
+					0.782, 0.7811, 0.7795, 0.7794, 0.7806, 0.7794, 0.7794, 0.7778, 0.7793, 0.7808,
+					0.7824, 0.787, 0.7894, 0.7893, 0.7882, 0.7871, 0.7882, 0.7871, 0.7878, 0.79,
+					0.7901, 0.7898, 0.7879, 0.7886, 0.7858, 0.7814, 0.7825, 0.7826, 0.7826, 0.786,
+					0.7878, 0.7868, 0.7883, 0.7893, 0.7892, 0.7876, 0.785, 0.787, 0.7873, 0.7901,
+					0.7936, 0.7939, 0.7938, 0.7956, 0.7975, 0.7978, 0.7972, 0.7995, 0.7995, 0.7994,
+					0.7976, 0.7977, 0.796, 0.7922, 0.7928, 0.7929, 0.7948, 0.797, 0.7953, 0.7907,
+					0.7872, 0.7852, 0.7852, 0.786, 0.7862, 0.7836, 0.7837, 0.784, 0.7867, 0.7867,
+					0.7869, 0.7837, 0.7827, 0.7825, 0.7779, 0.7791, 0.779, 0.7787, 0.78, 0.7807,
+					0.7803, 0.7817, 0.7799, 0.7799, 0.7795, 0.7801, 0.7765, 0.7725, 0.7683, 0.7641,
+					0.7639, 0.7616, 0.7608, 0.759, 0.7582, 0.7539, 0.75, 0.75, 0.7507, 0.7505,
+					0.7516, 0.7522, 0.7531, 0.7577, 0.7577, 0.7582, 0.755, 0.7542, 0.7576, 0.7616,
+					0.7648, 0.7648, 0.7641, 0.7614, 0.757, 0.7587, 0.7588, 0.762, 0.762, 0.7617,
+					0.7618, 0.7615, 0.7612, 0.7596, 0.758, 0.758, 0.758, 0.7547, 0.7549, 0.7613,
+					0.7655, 0.7693, 0.7694, 0.7688, 0.7678, 0.7708, 0.7727, 0.7749, 0.7741, 0.7741,
+					0.7732, 0.7727, 0.7737, 0.7724, 0.7712, 0.772, 0.7721, 0.7717, 0.7704, 0.769,
+					0.7711, 0.774, 0.7745, 0.7745, 0.774, 0.7716, 0.7713, 0.7678, 0.7688, 0.7718,
+					0.7718, 0.7728, 0.7729, 0.7698, 0.7685, 0.7681, 0.769, 0.769, 0.7698, 0.7699,
+					0.7651, 0.7613, 0.7616, 0.7614, 0.7614, 0.7607, 0.7602, 0.7611, 0.7622, 0.7615,
+					0.7598, 0.7598, 0.7592, 0.7573, 0.7566, 0.7567, 0.7591, 0.7582, 0.7585, 0.7613,
+					0.7631, 0.7615, 0.76, 0.7613, 0.7627, 0.7627, 0.7608, 0.7583, 0.7575, 0.7562,
+					0.752, 0.7512, 0.7512, 0.7517, 0.752, 0.7511, 0.748, 0.7509, 0.7531, 0.7531,
+					0.7527, 0.7498, 0.7493, 0.7504, 0.75, 0.7491, 0.7491, 0.7485, 0.7484, 0.7492,
+					0.7471, 0.7459, 0.7477, 0.7477, 0.7483, 0.7458, 0.7448, 0.743, 0.7399, 0.7395,
+					0.7395, 0.7378, 0.7382, 0.7362, 0.7355, 0.7348, 0.7361, 0.7361, 0.7365, 0.7362,
+					0.7331, 0.7339, 0.7344, 0.7327, 0.7327, 0.7336, 0.7333, 0.7359, 0.7359, 0.7372,
+					0.736, 0.736, 0.735, 0.7365, 0.7384, 0.7395, 0.7413, 0.7397, 0.7396, 0.7385,
+					0.7378, 0.7366, 0.74, 0.7411, 0.7406, 0.7405, 0.7414, 0.7431, 0.7431, 0.7438,
+					0.7443, 0.7443, 0.7443, 0.7434, 0.7429, 0.7442, 0.744, 0.7439, 0.7437, 0.7437,
+					0.7429, 0.7403, 0.7399, 0.7418, 0.7468, 0.748, 0.748, 0.749, 0.7494, 0.7522,
+					0.7515, 0.7502, 0.7472, 0.7472, 0.7462, 0.7455, 0.7449, 0.7467, 0.7458, 0.7427,
+					0.7427, 0.743, 0.7429, 0.744, 0.743, 0.7422, 0.7388, 0.7388, 0.7369, 0.7345,
+					0.7345, 0.7345, 0.7352, 0.7341, 0.7341, 0.734, 0.7324, 0.7272, 0.7264, 0.7255,
+					0.7258, 0.7258, 0.7256, 0.7257, 0.7247, 0.7243, 0.7244, 0.7235, 0.7235, 0.7235,
+					0.7235, 0.7262, 0.7288, 0.7301, 0.7337, 0.7337, 0.7324, 0.7297, 0.7317, 0.7315,
+					0.7288, 0.7263, 0.7263, 0.7242, 0.7253, 0.7264, 0.727, 0.7312, 0.7305, 0.7305,
+					0.7318, 0.7358, 0.7409, 0.7454, 0.7437, 0.7424, 0.7424, 0.7415, 0.7419, 0.7414,
+					0.7377, 0.7355, 0.7315, 0.7315, 0.732, 0.7332, 0.7346, 0.7328, 0.7323, 0.734,
+					0.734, 0.7336, 0.7351, 0.7346, 0.7321, 0.7294, 0.7266, 0.7266, 0.7254, 0.7242,
+					0.7213, 0.7197, 0.7209, 0.721, 0.721, 0.721, 0.7209, 0.7159, 0.7133, 0.7105,
+					0.7099, 0.7099, 0.7093, 0.7093, 0.7076, 0.707, 0.7049, 0.7012, 0.7011, 0.7019,
+					0.7046, 0.7063, 0.7089, 0.7077, 0.7077, 0.7077, 0.7091, 0.7118, 0.7079, 0.7053,
+					0.705, 0.7055, 0.7055, 0.7045, 0.7051, 0.7051, 0.7017, 0.7, 0.6995, 0.6994,
+					0.7014, 0.7036, 0.7021, 0.7002, 0.6967, 0.695, 0.695, 0.6939, 0.694, 0.6922,
+					0.6919, 0.6914, 0.6894, 0.6891, 0.6904, 0.689, 0.6834, 0.6823, 0.6807, 0.6815,
+					0.6815, 0.6847, 0.6859, 0.6822, 0.6827, 0.6837, 0.6823, 0.6822, 0.6822, 0.6792,
+					0.6746, 0.6735, 0.6731, 0.6742, 0.6744, 0.6739, 0.6731, 0.6761, 0.6761, 0.6785,
+					0.6818, 0.6836, 0.6823, 0.6805, 0.6793, 0.6849, 0.6833, 0.6825, 0.6825, 0.6816,
+					0.6799, 0.6813, 0.6809, 0.6868, 0.6933, 0.6933, 0.6945, 0.6944, 0.6946, 0.6964,
+					0.6965, 0.6956, 0.6956, 0.695, 0.6948, 0.6928, 0.6887, 0.6824, 0.6794, 0.6794,
+					0.6803, 0.6855, 0.6824, 0.6791, 0.6783, 0.6785, 0.6785, 0.6797, 0.68, 0.6803,
+					0.6805, 0.676, 0.677, 0.677, 0.6736, 0.6726, 0.6764, 0.6821, 0.6831, 0.6842,
+					0.6842, 0.6887, 0.6903, 0.6848, 0.6824, 0.6788, 0.6814, 0.6814, 0.6797, 0.6769,
+					0.6765, 0.6733, 0.6729, 0.6758, 0.6758, 0.675, 0.678, 0.6833, 0.6856, 0.6903,
+					0.6896, 0.6896, 0.6882, 0.6879, 0.6862, 0.6852, 0.6823, 0.6813, 0.6813, 0.6822,
+					0.6802, 0.6802, 0.6784, 0.6748, 0.6747, 0.6747, 0.6748, 0.6733, 0.665, 0.6611,
+					0.6583, 0.659, 0.659, 0.6581, 0.6578, 0.6574, 0.6532, 0.6502, 0.6514, 0.6514,
+					0.6507, 0.651, 0.6489, 0.6424, 0.6406, 0.6382, 0.6382, 0.6341, 0.6344, 0.6378,
+					0.6439, 0.6478, 0.6481, 0.6481, 0.6494, 0.6438, 0.6377, 0.6329, 0.6336, 0.6333,
+					0.6333, 0.633, 0.6371, 0.6403, 0.6396, 0.6364, 0.6356, 0.6356, 0.6368, 0.6357,
+					0.6354, 0.632, 0.6332, 0.6328, 0.6331, 0.6342, 0.6321, 0.6302, 0.6278, 0.6308,
+					0.6324, 0.6324, 0.6307, 0.6277, 0.6269, 0.6335, 0.6392, 0.64, 0.6401, 0.6396,
+					0.6407, 0.6423, 0.6429, 0.6472, 0.6485, 0.6486, 0.6467, 0.6444, 0.6467, 0.6509,
+					0.6478, 0.6461, 0.6461, 0.6468, 0.6449, 0.647, 0.6461, 0.6452, 0.6422, 0.6422,
+					0.6425, 0.6414, 0.6366, 0.6346, 0.635, 0.6346, 0.6346, 0.6343, 0.6346, 0.6379,
+					0.6416, 0.6442, 0.6431, 0.6431, 0.6435, 0.644, 0.6473, 0.6469, 0.6386, 0.6356,
+					0.634, 0.6346, 0.643, 0.6452, 0.6467, 0.6506, 0.6504, 0.6503, 0.6481, 0.6451,
+					0.645, 0.6441, 0.6414, 0.6409, 0.6409, 0.6428, 0.6431, 0.6418, 0.6371, 0.6349,
+					0.6333, 0.6334, 0.6338, 0.6342, 0.632, 0.6318, 0.637, 0.6368, 0.6368, 0.6383,
+					0.6371, 0.6371, 0.6355, 0.632, 0.6277, 0.6276, 0.6291, 0.6274, 0.6293, 0.6311,
+					0.631, 0.6312, 0.6312, 0.6304, 0.6294, 0.6348, 0.6378, 0.6368, 0.6368, 0.6368,
+					0.636, 0.637, 0.6418, 0.6411, 0.6435, 0.6427, 0.6427, 0.6419, 0.6446, 0.6468,
+					0.6487, 0.6594, 0.6666, 0.6666, 0.6678, 0.6712, 0.6705, 0.6718, 0.6784, 0.6811,
+					0.6811, 0.6794, 0.6804, 0.6781, 0.6756, 0.6735, 0.6763, 0.6762, 0.6777, 0.6815,
+					0.6802, 0.678, 0.6796, 0.6817, 0.6817, 0.6832, 0.6877, 0.6912, 0.6914, 0.7009,
+					0.7012, 0.701, 0.7005, 0.7076, 0.7087, 0.717, 0.7105, 0.7031, 0.7029, 0.7006,
+					0.7035, 0.7045, 0.6956, 0.6988, 0.6915, 0.6914, 0.6859, 0.6778, 0.6815, 0.6815,
+					0.6843, 0.6846, 0.6846, 0.6923, 0.6997, 0.7098, 0.7188, 0.7232, 0.7262, 0.7266,
+					0.7359, 0.7368, 0.7337, 0.7317, 0.7387, 0.7467, 0.7461, 0.7366, 0.7319, 0.7361,
+					0.7437, 0.7432, 0.7461, 0.7461, 0.7454, 0.7549, 0.7742, 0.7801, 0.7903, 0.7876,
+					0.7928, 0.7991, 0.8007, 0.7823, 0.7661, 0.785, 0.7863, 0.7862, 0.7821, 0.7858,
+					0.7731, 0.7779, 0.7844, 0.7866, 0.7864, 0.7788, 0.7875, 0.7971, 0.8004, 0.7857,
+					0.7932, 0.7938, 0.7927, 0.7918, 0.7919, 0.7989, 0.7988, 0.7949, 0.7948, 0.7882,
+					0.7745, 0.771, 0.775, 0.7791, 0.7882, 0.7882, 0.7899, 0.7905, 0.7889, 0.7879,
+					0.7855, 0.7866, 0.7865, 0.7795, 0.7758, 0.7717, 0.761, 0.7497, 0.7471, 0.7473,
+					0.7407, 0.7288, 0.7074, 0.6927, 0.7083, 0.7191, 0.719, 0.7153, 0.7156, 0.7158,
+					0.714, 0.7119, 0.7129, 0.7129, 0.7049, 0.7095
+				]
+			}]
+		});
+	});
+}
 
 function dodajMeritveVitalnihZnakov() {
 	sessionId = getSessionId();
@@ -142,7 +629,6 @@ function dodajMeritveVitalnihZnakov() {
 		});
 	}
 }
-
 
 function preberiMeritveVitalnihZnakov() {
 	sessionId = getSessionId();	
@@ -248,7 +734,6 @@ function preberiMeritveVitalnihZnakov() {
 	}
 }
 
-
 $(document).ready(function() {
 	$('#preberiObstojeciEHR').change(function() {
 		$("#preberiSporocilo").html("");
@@ -281,90 +766,6 @@ $(document).ready(function() {
 	});
 });
 
-/* Don't forget list */
-$("#sortable").sortable();
-$("#sortable").disableSelection();
-
-countTodos();
-
-// all done btn
-$("#checkAll").click(function(){
-    AllDone();
-});
-
-//create todo
-$('.add-todo').on('keypress',function (e) {
-    e.preventDefault
-    if (e.which == 13) {
-        if($(this).val() != ''){
-            var todo = $(this).val();
-            createTodo(todo);
-            countTodos();
-        }else{
-            // some validation
-        }
-    }
-});
-// mark task as done
-$('.todolist').on('change','#sortable li input[type="checkbox"]',function(){
-    if($(this).prop('checked')){
-        var doneItem = $(this).parent().parent().find('label').text();
-        $(this).parent().parent().parent().addClass('remove');
-        done(doneItem);
-        countTodos();
-    }
-});
-
-//delete done task from "already done"
-$('.todolist').on('click','.remove-item',function(){
-    removeItem(this);
-});
-
-// count tasks
-function countTodos(){
-    var count = $("#sortable li").length;
-    $('.count-todos').html(count);
-}
-
-//create task
-function createTodo(text){
-    var markup = '<li class="ui-state-default"><div class="checkbox"><label><input type="checkbox" value="" />'+ text +'</label></div></li>';
-    $('#sortable').append(markup);
-    $('.add-todo').val('');
-}
-
-//mark task as done
-function done(doneItem){
-    var done = doneItem;
-    var markup = '<li>'+ done +'<button class="btn btn-default btn-xs pull-right  remove-item"><span class="glyphicon glyphicon-remove"></span></button></li>';
-    $('#done-items').append(markup);
-    $('.remove').remove();
-}
-
-//mark all tasks as done
-function AllDone(){
-    var myArray = [];
-
-    $('#sortable li').each( function() {
-        myArray.push($(this).text());
-    });
-
-    // add to done
-    for (i = 0; i < myArray.length; i++) {
-        $('#done-items').append('<li>' + myArray[i] + '<button class="btn btn-default btn-xs pull-right  remove-item"><span class="glyphicon glyphicon-remove"></span></button></li>');
-    }
-
-    // myArray
-    $('#sortable li').remove();
-    countTodos();
-}
-
-//remove done task from list
-function removeItem(element){
-    $(element).parent().remove();
-}
-/* Don't forget list - over */
-
 /* Contact */
 $(document).ready(function() {
     var panels = $('.vote-results');
@@ -394,17 +795,6 @@ $(document).ready(function() {
 });
 /* Contact - over */
 
-/* Selector */
-$(function(){
-    $('div.product-chooser').not('.disabled').find('div.product-chooser-item').on('click', function(){
-        $(this).parent().parent().find('div.product-chooser-item').removeClass('selected');
-        $(this).addClass('selected');
-        $(this).find('input[type="radio"]').prop("checked", true);
-
-    });
-});
-/* Selector - over */
-
 /* CircleHoverEffect */
-;window.Modernizr=function(a,b,c){function z(a){j.cssText=a}function A(a,b){return z(m.join(a+";")+(b||""))}function B(a,b){return typeof a===b}function C(a,b){return!!~(""+a).indexOf(b)}function D(a,b){for(var d in a)if(j[a[d]]!==c)return b=="pfx"?a[d]:!0;return!1}function E(a,b,d){for(var e in a){var f=b[a[e]];if(f!==c)return d===!1?a[e]:B(f,"function")?f.bind(d||b):f}return!1}function F(a,b,c){var d=a.charAt(0).toUpperCase()+a.substr(1),e=(a+" "+o.join(d+" ")+d).split(" ");return B(b,"string")||B(b,"undefined")?D(e,b):(e=(a+" "+p.join(d+" ")+d).split(" "),E(e,b,c))}var d="2.5.3",e={},f=!0,g=b.documentElement,h="modernizr",i=b.createElement(h),j=i.style,k,l={}.toString,m=" -webkit- -moz- -o- -ms- ".split(" "),n="Webkit Moz O ms",o=n.split(" "),p=n.toLowerCase().split(" "),q={},r={},s={},t=[],u=t.slice,v,w=function(a,c,d,e){var f,i,j,k=b.createElement("div"),l=b.body,m=l?l:b.createElement("body");if(parseInt(d,10))while(d--)j=b.createElement("div"),j.id=e?e[d]:h+(d+1),k.appendChild(j);return f=["&#173;","<style>",a,"</style>"].join(""),k.id=h,(l?k:m).innerHTML+=f,m.appendChild(k),l||(m.style.background="",g.appendChild(m)),i=c(k,a),l?k.parentNode.removeChild(k):m.parentNode.removeChild(m),!!i},x={}.hasOwnProperty,y;!B(x,"undefined")&&!B(x.call,"undefined")?y=function(a,b){return x.call(a,b)}:y=function(a,b){return b in a&&B(a.constructor.prototype[b],"undefined")},Function.prototype.bind||(Function.prototype.bind=function(b){var c=this;if(typeof c!="function")throw new TypeError;var d=u.call(arguments,1),e=function(){if(this instanceof e){var a=function(){};a.prototype=c.prototype;var f=new a,g=c.apply(f,d.concat(u.call(arguments)));return Object(g)===g?g:f}return c.apply(b,d.concat(u.call(arguments)))};return e});var G=function(a,c){var d=a.join(""),f=c.length;w(d,function(a,c){var d=b.styleSheets[b.styleSheets.length-1],g=d?d.cssRules&&d.cssRules[0]?d.cssRules[0].cssText:d.cssText||"":"",h=a.childNodes,i={};while(f--)i[h[f].id]=h[f];e.csstransforms3d=(i.csstransforms3d&&i.csstransforms3d.offsetLeft)===9&&i.csstransforms3d.offsetHeight===3},f,c)}([,["@media (",m.join("transform-3d),("),h,")","{#csstransforms3d{left:9px;position:absolute;height:3px;}}"].join("")],[,"csstransforms3d"]);q.cssanimations=function(){return F("animationName")},q.csstransforms=function(){return!!F("transform")},q.csstransforms3d=function(){var a=!!F("perspective");return a&&"webkitPerspective"in g.style&&(a=e.csstransforms3d),a},q.csstransitions=function(){return F("transition")};for(var H in q)y(q,H)&&(v=H.toLowerCase(),e[v]=q[H](),t.push((e[v]?"":"no-")+v));return z(""),i=k=null,function(a,b){function g(a,b){var c=a.createElement("p"),d=a.getElementsByTagName("head")[0]||a.documentElement;return c.innerHTML="x<style>"+b+"</style>",d.insertBefore(c.lastChild,d.firstChild)}function h(){var a=k.elements;return typeof a=="string"?a.split(" "):a}function i(a){var b={},c=a.createElement,e=a.createDocumentFragment,f=e();a.createElement=function(a){var e=(b[a]||(b[a]=c(a))).cloneNode();return k.shivMethods&&e.canHaveChildren&&!d.test(a)?f.appendChild(e):e},a.createDocumentFragment=Function("h,f","return function(){var n=f.cloneNode(),c=n.createElement;h.shivMethods&&("+h().join().replace(/\w+/g,function(a){return b[a]=c(a),f.createElement(a),'c("'+a+'")'})+");return n}")(k,f)}function j(a){var b;return a.documentShived?a:(k.shivCSS&&!e&&(b=!!g(a,"article,aside,details,figcaption,figure,footer,header,hgroup,nav,section{display:block}audio{display:none}canvas,video{display:inline-block;*display:inline;*zoom:1}[hidden]{display:none}audio[controls]{display:inline-block;*display:inline;*zoom:1}mark{background:#FF0;color:#000}")),f||(b=!i(a)),b&&(a.documentShived=b),a)}var c=a.html5||{},d=/^<|^(?:button|form|map|select|textarea)$/i,e,f;(function(){var a=b.createElement("a");a.innerHTML="<xyz></xyz>",e="hidden"in a,f=a.childNodes.length==1||function(){try{b.createElement("a")}catch(a){return!0}var c=b.createDocumentFragment();return typeof c.cloneNode=="undefined"||typeof c.createDocumentFragment=="undefined"||typeof c.createElement=="undefined"}()})();var k={elements:c.elements||"abbr article aside audio bdi canvas data datalist details figcaption figure footer header hgroup mark meter nav output progress section summary time video",shivCSS:c.shivCSS!==!1,shivMethods:c.shivMethods!==!1,type:"default",shivDocument:j};a.html5=k,j(b)}(this,b),e._version=d,e._prefixes=m,e._domPrefixes=p,e._cssomPrefixes=o,e.testProp=function(a){return D([a])},e.testAllProps=F,e.testStyles=w,g.className=g.className.replace(/(^|\s)no-js(\s|$)/,"$1$2")+(f?" js "+t.join(" "):""),e}(this,this.document);
+	;window.Modernizr=function(a,b,c){function z(a){j.cssText=a}function A(a,b){return z(m.join(a+";")+(b||""))}function B(a,b){return typeof a===b}function C(a,b){return!!~(""+a).indexOf(b)}function D(a,b){for(var d in a)if(j[a[d]]!==c)return b=="pfx"?a[d]:!0;return!1}function E(a,b,d){for(var e in a){var f=b[a[e]];if(f!==c)return d===!1?a[e]:B(f,"function")?f.bind(d||b):f}return!1}function F(a,b,c){var d=a.charAt(0).toUpperCase()+a.substr(1),e=(a+" "+o.join(d+" ")+d).split(" ");return B(b,"string")||B(b,"undefined")?D(e,b):(e=(a+" "+p.join(d+" ")+d).split(" "),E(e,b,c))}var d="2.5.3",e={},f=!0,g=b.documentElement,h="modernizr",i=b.createElement(h),j=i.style,k,l={}.toString,m=" -webkit- -moz- -o- -ms- ".split(" "),n="Webkit Moz O ms",o=n.split(" "),p=n.toLowerCase().split(" "),q={},r={},s={},t=[],u=t.slice,v,w=function(a,c,d,e){var f,i,j,k=b.createElement("div"),l=b.body,m=l?l:b.createElement("body");if(parseInt(d,10))while(d--)j=b.createElement("div"),j.id=e?e[d]:h+(d+1),k.appendChild(j);return f=["&#173;","<style>",a,"</style>"].join(""),k.id=h,(l?k:m).innerHTML+=f,m.appendChild(k),l||(m.style.background="",g.appendChild(m)),i=c(k,a),l?k.parentNode.removeChild(k):m.parentNode.removeChild(m),!!i},x={}.hasOwnProperty,y;!B(x,"undefined")&&!B(x.call,"undefined")?y=function(a,b){return x.call(a,b)}:y=function(a,b){return b in a&&B(a.constructor.prototype[b],"undefined")},Function.prototype.bind||(Function.prototype.bind=function(b){var c=this;if(typeof c!="function")throw new TypeError;var d=u.call(arguments,1),e=function(){if(this instanceof e){var a=function(){};a.prototype=c.prototype;var f=new a,g=c.apply(f,d.concat(u.call(arguments)));return Object(g)===g?g:f}return c.apply(b,d.concat(u.call(arguments)))};return e});var G=function(a,c){var d=a.join(""),f=c.length;w(d,function(a,c){var d=b.styleSheets[b.styleSheets.length-1],g=d?d.cssRules&&d.cssRules[0]?d.cssRules[0].cssText:d.cssText||"":"",h=a.childNodes,i={};while(f--)i[h[f].id]=h[f];e.csstransforms3d=(i.csstransforms3d&&i.csstransforms3d.offsetLeft)===9&&i.csstransforms3d.offsetHeight===3},f,c)}([,["@media (",m.join("transform-3d),("),h,")","{#csstransforms3d{left:9px;position:absolute;height:3px;}}"].join("")],[,"csstransforms3d"]);q.cssanimations=function(){return F("animationName")},q.csstransforms=function(){return!!F("transform")},q.csstransforms3d=function(){var a=!!F("perspective");return a&&"webkitPerspective"in g.style&&(a=e.csstransforms3d),a},q.csstransitions=function(){return F("transition")};for(var H in q)y(q,H)&&(v=H.toLowerCase(),e[v]=q[H](),t.push((e[v]?"":"no-")+v));return z(""),i=k=null,function(a,b){function g(a,b){var c=a.createElement("p"),d=a.getElementsByTagName("head")[0]||a.documentElement;return c.innerHTML="x<style>"+b+"</style>",d.insertBefore(c.lastChild,d.firstChild)}function h(){var a=k.elements;return typeof a=="string"?a.split(" "):a}function i(a){var b={},c=a.createElement,e=a.createDocumentFragment,f=e();a.createElement=function(a){var e=(b[a]||(b[a]=c(a))).cloneNode();return k.shivMethods&&e.canHaveChildren&&!d.test(a)?f.appendChild(e):e},a.createDocumentFragment=Function("h,f","return function(){var n=f.cloneNode(),c=n.createElement;h.shivMethods&&("+h().join().replace(/\w+/g,function(a){return b[a]=c(a),f.createElement(a),'c("'+a+'")'})+");return n}")(k,f)}function j(a){var b;return a.documentShived?a:(k.shivCSS&&!e&&(b=!!g(a,"article,aside,details,figcaption,figure,footer,header,hgroup,nav,section{display:block}audio{display:none}canvas,video{display:inline-block;*display:inline;*zoom:1}[hidden]{display:none}audio[controls]{display:inline-block;*display:inline;*zoom:1}mark{background:#FF0;color:#000}")),f||(b=!i(a)),b&&(a.documentShived=b),a)}var c=a.html5||{},d=/^<|^(?:button|form|map|select|textarea)$/i,e,f;(function(){var a=b.createElement("a");a.innerHTML="<xyz></xyz>",e="hidden"in a,f=a.childNodes.length==1||function(){try{b.createElement("a")}catch(a){return!0}var c=b.createDocumentFragment();return typeof c.cloneNode=="undefined"||typeof c.createDocumentFragment=="undefined"||typeof c.createElement=="undefined"}()})();var k={elements:c.elements||"abbr article aside audio bdi canvas data datalist details figcaption figure footer header hgroup mark meter nav output progress section summary time video",shivCSS:c.shivCSS!==!1,shivMethods:c.shivMethods!==!1,type:"default",shivDocument:j};a.html5=k,j(b)}(this,b),e._version=d,e._prefixes=m,e._domPrefixes=p,e._cssomPrefixes=o,e.testProp=function(a){return D([a])},e.testAllProps=F,e.testStyles=w,g.className=g.className.replace(/(^|\s)no-js(\s|$)/,"$1$2")+(f?" js "+t.join(" "):""),e}(this,this.document);
 /* CircleHoverEffect - over */
