@@ -564,65 +564,41 @@ function preberiMeritveVitalnihZnakov() {
 					    	$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
 							console.log(JSON.parse(err.responseText).userMessage);
 					    }
-					});					
+					});
 				} else if (tip == "telesna teža AQL") {
 					var AQL =
-						 "select a_a#Body_weight as Body_weight " +
-						 "from EHR e[ehr_id/value='b931580f-2b05-488b-985b-8d9ffb08ad02'] " +
-						 "contains COMPOSITION a " +
-						 "contains OBSERVATION a_a#Body_weight " +
-						 "where " +
-						 "a_a#Body_weight/magnitude>100.0 and " +
-						 "a_a#Body_weight/units='kg' " +
-						 "order by a_a#Body_weight " +
-						 "offset 0 limit 10 ";
-
-						/*
 						"select " +
-							"a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value as Body_weight " +
+						"a_a/data[at0002]/events[at0003]/time/value as time, " +
+						"a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value/units as Body_weight_units, " +
+						"a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value/magnitude as Body_weight_magnitude " +
+						//"from EHR e[ehr_id/value='b931580f-2b05-488b-985b-8d9ffb08ad02'] " +
 						"from EHR e[e/ehr_id/value='" + ehrId + "'] " +
 						"contains COMPOSITION a " +
 						"contains OBSERVATION a_a[openEHR-EHR-OBSERVATION.body_weight.v1] " +
-						"where " +
-						"a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value/magnitude>100.0 and " +
-						"a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value/units='kg' " +
-						"order by " +
-						"a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value " +
-						"offset 0 limit 10 ";
-						*/
-
-						/*
-						"select " +
-						"t/data[at0002]/events[at0003]/time/value as cas, " +
-						"t/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value/magnitude as teza_vrednost, " +
-						"t/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value/units as teza_enota " +
-						"from EHR e[e/ehr_id/value='" + ehrId + "'] " +
-						"contains OBSERVATION t[openEHR-EHR-OBSERVATION.body_weight.v1] " +
-						"where t/data[at0002]/events[at0003]/data[at0001]/items[at0004]/value/magnitude>100 " +
-						"order by t/data[at0002]/events[at0003]/time/value desc " +
-						"limit 10";
-						*/
+						"where a_a/data[at0002]/events[at0003]/data[at0001]/items[at0004, 'Body weight']/value/magnitude>100 " +
+						"order by a_a/data[at0002]/events[at0003]/time/value desc " +
+						"offset 0 limit 10";
 					$.ajax({
-					    url: baseUrl + "/query?" + $.param({"aql": AQL}),
-					    type: 'GET',
-					    headers: {"Ehr-Session": sessionId},
-					    success: function (res) {
-					    	var results = "<table class='table table-striped table-hover'><tr><th>Datum in ura</th><th class='text-right'>Telesna temperatura</th></tr>";
-					    	if (res) {
-					    		var rows = res.resultSet;
-						        for (var i in rows) {
-						            results += "<tr><td>" + rows[i].Body_weight + "</td>";
-						        }
-						        results += "</table>";
-						        $("#rezultatMeritveVitalnihZnakov").append(results);
-					    	} else {
-					    		$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Ni podatkov!</span>");
-					    	}
-					    },
-					    error: function() {
-					    	$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+						url: baseUrl + "/query?" + $.param({"aql": AQL}),
+						type: 'GET',
+						headers: {"Ehr-Session": sessionId},
+						success: function (res) {
+							var results = "<table class='table table-striped table-hover'><tr><th>Datum in ura</th><th class='text-right'>Telesna teža</th></tr>";
+							if (res) {
+								var rows = res.resultSet;
+								for (var i in rows) {
+									results += "<tr><td>" + rows[i].time + "</td><td class='text-right'>" + rows[i].Body_weight_magnitude + " " 	+ rows[i].Body_weight_units + "</td>";
+								}
+								results += "</table>";
+								$("#rezultatMeritveVitalnihZnakov").append(results);
+							} else {
+								$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Ni podatkov!</span>");
+							}
+						},
+						error: function() {
+							$("#preberiMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
 							console.log(JSON.parse(err.responseText).userMessage);
-					    }
+						}
 					});
 				} else if (tip == "telesna temperatura AQL") {
 					var AQL =
