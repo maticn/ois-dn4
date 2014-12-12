@@ -38,6 +38,14 @@
                         <li><a href="pacient3.html">Bogomir King</a></li>
                     </ul>
                 </li>
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dodajanje meritev za<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><button type="button" class="btn btn-primary btn-xs" id="vMeniju" onclick="dodajMeritveVitalnihZnakovA()">Vincencija</button><span id="dodajMeritveVitalnihZnakovSporocilo"></span></li>
+                        <li><button type="button" class="btn btn-primary btn-xs" id="vMeniju" onclick="dodajMeritveVitalnihZnakovB()">Justino</button><span id="dodajMeritveVitalnihZnakovSporocilo"></span></li>
+                        <li><button type="button" class="btn btn-primary btn-xs" id="vMeniju" onclick="dodajMeritveVitalnihZnakovC()">Bogomirja</button><span id="dodajMeritveVitalnihZnakovSporocilo"></span></li>
+                    </ul>
+                </li>
                 <li><a href="#">GEO lokacija bolnišnice</a></li>
                 <li><a class="btn-kontakt" data-toggle="modal" data-target="#contact" data-original-title>Kontakt</a></li>
             </ul>
@@ -92,7 +100,7 @@
                                 </tr>
                                 <tr>
                                     <td>EHR ID:</td>
-                                    <td><div id="preberiEHRid">b931580f-2b05-488b-985b-8d9ffb08ad02</div></td>
+                                    <td><div id="preberiEHRid">d6138d6c-972d-4155-883f-ed785c9a823a</div></td>
                                 </tr>
                                 </tbody>
                             </table>
@@ -199,11 +207,11 @@
                     <div class="row">
                         <div class="col-lg-4 col-md-4 col-sm-4">Meritve vitalnih znakov</div>
                         <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiTipZaVitalneZnake"><option value="telesna teža">telesna teža</option><option value="telesna teža AQL">telesna teža (filter na 100 kg)</option><option value="telesna temperatura">telesna temperatura</option><option value="telesna temperatura AQL">telesna temperatura (filter na podhladitev)</option></select></div>
-                        <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiEhrIdZaVitalneZnake"><option value=""></option><option value="b931580f-2b05-488b-985b-8d9ffb08ad02">Vincenc Caret</option></select></div>
+                        <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiEhrIdZaVitalneZnake"><option value=""></option><option value="d6138d6c-972d-4155-883f-ed785c9a823a">Vincenc Caret</option></select></div>
                     </div>
                 </div>
                 <div class="panel-body">
-                    <span class="label label-default">EHR ID</span><input id="meritveVitalnihZnakovEHRid" type="text" class="form-control input-mini" placeholder="7b661e12-3a98-21ad-c29e-2dc9f5a3d885">
+                    <span class="label label-default">EHR ID</span><input id="meritveVitalnihZnakovEHRid" type="text" class="form-control input-mini" placeholder="d6138d6c-972d-4155-883f-ed785c9a823a">
                     <button type="button" class="btn btn-primary btn-xs" onclick="preberiMeritveVitalnihZnakov('telesna temperatura')">Preberi meritve vitalnih znakov</button><span id="preberiMeritveVitalnihZnakovSporocilo"></span>
                     <div id="rezultatMeritveVitalnihZnakov"></div>
                 </div>

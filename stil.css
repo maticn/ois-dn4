@@ -389,6 +389,33 @@ body {
     padding-left: 15px;
 }
 
+.page-header {
+    margin-top: 80px;
+}
+
+#odmikRoba {
+    width: 98%;
+    padding: 10px;
+    margin: 10px;
+}
+
+#vMeniju {
+    color: #262626;
+    text-decoration: none;
+    background-color: #f5f5f5;
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: 400;
+    line-height: 1.42857143;
+    color: #333;
+    white-space: nowrap;
+    margin-left: 25px;
+}
+
+#zozi {
+    width: 820px;
+}
 /*
 #pacient-meritve-okvir {
     display: block;

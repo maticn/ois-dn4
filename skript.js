@@ -35,6 +35,13 @@ $(document).ready(function () {
 	preberiEHRodBolnika();
 	//narisiGraf();
 
+	// Auto fill polj za tabelo "Meritve vitalnih znakov"
+	$('#preberiEhrIdZaVitalneZnake').change(function() {
+		$("#preberiMeritveVitalnihZnakovSporocilo").html("");
+		$("#rezultatMeritveVitalnihZnakov").html("");
+		$("#meritveVitalnihZnakovEHRid").val($(this).val());
+	});
+
 	/* Don't forget list */
 	$("#sortable").sortable();
 	$("#sortable").disableSelection();
@@ -120,15 +127,16 @@ $(document).ready(function () {
 	/* Don't forget list - over */
 });
 
+/*
 function kreirajEHRzaBolnika() {
 
 	sessionId = getSessionId();
 
-	var ime = $("#kreirajIme").val();
+	var imee = $("#kreirajIme").val();
 	var priimek = $("#kreirajPriimek").val();
 	var datumRojstva = $("#kreirajDatumRojstva").val();
 
-	if (!ime || !priimek || !datumRojstva || ime.trim().length == 0 || priimek.trim().length == 0 || datumRojstva.trim().length == 0) {
+	if (!imee || !priimek || !datumRojstva || imee.trim().length == 0 || priimek.trim().length == 0 || datumRojstva.trim().length == 0) {
 		$("#kreirajSporocilo").html("<span class='obvestilo label label-warning fade-in'>Prosim vnesite zahtevane podatke!</span>");
 	} else {
 		$.ajaxSetup({
@@ -140,7 +148,7 @@ function kreirajEHRzaBolnika() {
 		    success: function (data) {
 		        var ehrId = data.ehrId;
 		        var partyData = {
-		            firstNames: ime,
+		            firstNames: imee,
 		            lastNames: priimek,
 		            dateOfBirth: datumRojstva,
 		            partyAdditionalInfo: [{key: "ehrId", value: ehrId}]
@@ -166,6 +174,7 @@ function kreirajEHRzaBolnika() {
 		});
 	}
 }
+*/
 
 var ime;
 var pogostoIme;
@@ -450,18 +459,23 @@ function izracunajITM() {
 	}
 }
 
-function dodajMeritveVitalnihZnakov() {
+function getRandomNumber(min, max) {
+	return Math.round(Math.random() * (max-min) + min);
+}
+
+function randomDate(start, end) {
+	return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+}
+
+function dodajMeritveVitalnihZnakovA() {
 	sessionId = getSessionId();
 
-	var ehrId = $("#dodajVitalnoEHR").val();
-	var datumInUra = $("#dodajVitalnoDatumInUra").val();
-	var telesnaVisina = $("#dodajVitalnoTelesnaVisina").val();
-	var telesnaTeza = $("#dodajVitalnoTelesnaTeza").val();
-	var telesnaTemperatura = $("#dodajVitalnoTelesnaTemperatura").val();
-	var sistolicniKrvniTlak = $("#dodajVitalnoKrvniTlakSistolicni").val();
-	var diastolicniKrvniTlak = $("#dodajVitalnoKrvniTlakDiastolicni").val();
-	var nasicenostKrviSKisikom = $("#dodajVitalnoNasicenostKrviSKisikom").val();
-	var merilec = $("#dodajVitalnoMerilec").val();
+	var ehrId = "d6138d6c-972d-4155-883f-ed785c9a823a";
+	var datumInUra = randomDate(new Date(2012, 1, 10), new Date());
+	var telesnaTeza = getRandomNumber(70, 88);
+	var telesnaVisina = getRandomNumber(182, 184);
+	var telesnaTemperatura = getRandomNumber(35, 38);
+	var merilec = "homeMade";
 
 	if (!ehrId || ehrId.trim().length == 0) {
 		$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Prosim vnesite zahtevane podatke!</span>");
@@ -474,13 +488,10 @@ function dodajMeritveVitalnihZnakov() {
 		    "ctx/language": "en",
 		    "ctx/territory": "SI",
 		    "ctx/time": datumInUra,
-		    "vital_signs/height_length/any_event/body_height_length": telesnaVisina,
+			"vital_signs/height_length/any_event/body_height_length": telesnaVisina,
 		    "vital_signs/body_weight/any_event/body_weight": telesnaTeza,
 		   	"vital_signs/body_temperature/any_event/temperature|magnitude": telesnaTemperatura,
-		    "vital_signs/body_temperature/any_event/temperature|unit": "°C",
-		    "vital_signs/blood_pressure/any_event/systolic": sistolicniKrvniTlak,
-		    "vital_signs/blood_pressure/any_event/diastolic": diastolicniKrvniTlak,
-		    "vital_signs/indirect_oximetry:0/spo2|numerator": nasicenostKrviSKisikom
+		    "vital_signs/body_temperature/any_event/temperature|unit": "°C"
 		};
 		var parametriZahteve = {
 		    "ehrId": ehrId,
@@ -501,6 +512,104 @@ function dodajMeritveVitalnihZnakov() {
 		    	$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
 				console.log(JSON.parse(err.responseText).userMessage);
 		    }
+		});
+	}
+}
+
+function dodajMeritveVitalnihZnakovB() {
+	sessionId = getSessionId();
+
+	var ehrId = "de74617d-ff0b-49dc-8771-b22377408bcb";
+	var datumInUra = randomDate(new Date(2012, 1, 10), new Date());
+	var telesnaTeza = getRandomNumber(55, 62);
+	var telesnaVisina = getRandomNumber(163, 166);
+	var telesnaTemperatura = getRandomNumber(33, 36);
+	var merilec = "homeMade";
+
+	if (!ehrId || ehrId.trim().length == 0) {
+		$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Prosim vnesite zahtevane podatke!</span>");
+	} else {
+		$.ajaxSetup({
+			headers: {"Ehr-Session": sessionId}
+		});
+		var podatki = {
+			// Preview Structure: https://rest.ehrscape.com/rest/v1/template/Vital%20Signs/example
+			"ctx/language": "en",
+			"ctx/territory": "SI",
+			"ctx/time": datumInUra,
+			"vital_signs/height_length/any_event/body_height_length": telesnaVisina,
+			"vital_signs/body_weight/any_event/body_weight": telesnaTeza,
+			"vital_signs/body_temperature/any_event/temperature|magnitude": telesnaTemperatura,
+			"vital_signs/body_temperature/any_event/temperature|unit": "°C"
+		};
+		var parametriZahteve = {
+			"ehrId": ehrId,
+			templateId: 'Vital Signs',
+			format: 'FLAT',
+			committer: merilec
+		};
+		$.ajax({
+			url: baseUrl + "/composition?" + $.param(parametriZahteve),
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify(podatki),
+			success: function (res) {
+				console.log(res.meta.href);
+				$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-success fade-in'>" + res.meta.href + ".</span>");
+			},
+			error: function(err) {
+				$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+				console.log(JSON.parse(err.responseText).userMessage);
+			}
+		});
+	}
+}
+
+function dodajMeritveVitalnihZnakovC() {
+	sessionId = getSessionId();
+
+	var ehrId = "679065e8-badd-46e1-918e-2d349b093416";
+	var datumInUra = randomDate(new Date(2012, 1, 10), new Date());
+	var telesnaTeza = getRandomNumber(95, 110);
+	var telesnaVisina = getRandomNumber(197, 199);
+	var telesnaTemperatura = getRandomNumber(36, 38);
+	var merilec = "homeMade";
+
+	if (!ehrId || ehrId.trim().length == 0) {
+		$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-warning fade-in'>Prosim vnesite zahtevane podatke!</span>");
+	} else {
+		$.ajaxSetup({
+			headers: {"Ehr-Session": sessionId}
+		});
+		var podatki = {
+			// Preview Structure: https://rest.ehrscape.com/rest/v1/template/Vital%20Signs/example
+			"ctx/language": "en",
+			"ctx/territory": "SI",
+			"ctx/time": datumInUra,
+			"vital_signs/height_length/any_event/body_height_length": telesnaVisina,
+			"vital_signs/body_weight/any_event/body_weight": telesnaTeza,
+			"vital_signs/body_temperature/any_event/temperature|magnitude": telesnaTemperatura,
+			"vital_signs/body_temperature/any_event/temperature|unit": "°C"
+		};
+		var parametriZahteve = {
+			"ehrId": ehrId,
+			templateId: 'Vital Signs',
+			format: 'FLAT',
+			committer: merilec
+		};
+		$.ajax({
+			url: baseUrl + "/composition?" + $.param(parametriZahteve),
+			type: 'POST',
+			contentType: 'application/json',
+			data: JSON.stringify(podatki),
+			success: function (res) {
+				console.log(res.meta.href);
+				$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-success fade-in'>" + res.meta.href + ".</span>");
+			},
+			error: function(err) {
+				$("#dodajMeritveVitalnihZnakovSporocilo").html("<span class='obvestilo label label-danger fade-in'>Napaka '" + JSON.parse(err.responseText).userMessage + "'!");
+				console.log(JSON.parse(err.responseText).userMessage);
+			}
 		});
 	}
 }
@@ -643,38 +752,6 @@ function preberiMeritveVitalnihZnakov() {
 		});
 	}
 }
-
-$(document).ready(function() {
-	$('#preberiObstojeciEHR').change(function() {
-		$("#preberiSporocilo").html("");
-		$("#preberiEHRid").val($(this).val());
-	});
-	$('#preberiPredlogoBolnika').change(function() {
-		$("#kreirajSporocilo").html("");
-		var podatki = $(this).val().split(",");
-		$("#kreirajIme").val(podatki[0]);
-		$("#kreirajPriimek").val(podatki[1]);
-		$("#kreirajDatumRojstva").val(podatki[2]);
-	});
-	$('#preberiObstojeciVitalniZnak').change(function() {
-		$("#dodajMeritveVitalnihZnakovSporocilo").html("");
-		var podatki = $(this).val().split("|");
-		$("#dodajVitalnoEHR").val(podatki[0]);
-		$("#dodajVitalnoDatumInUra").val(podatki[1]);
-		$("#dodajVitalnoTelesnaVisina").val(podatki[2]);
-		$("#dodajVitalnoTelesnaTeza").val(podatki[3]);
-		$("#dodajVitalnoTelesnaTemperatura").val(podatki[4]);
-		$("#dodajVitalnoKrvniTlakSistolicni").val(podatki[5]);
-		$("#dodajVitalnoKrvniTlakDiastolicni").val(podatki[6]);
-		$("#dodajVitalnoNasicenostKrviSKisikom").val(podatki[7]);
-		$("#dodajVitalnoMerilec").val(podatki[8]);
-	});
-	$('#preberiEhrIdZaVitalneZnake').change(function() {
-		$("#preberiMeritveVitalnihZnakovSporocilo").html("");
-		$("#rezultatMeritveVitalnihZnakov").html("");
-		$("#meritveVitalnihZnakovEHRid").val($(this).val());
-	});
-});
 
 /* Contact */
 $(document).ready(function() {

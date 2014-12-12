@@ -10,6 +10,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.3.6/angular.min.js"></script>
     <link href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet">
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script src="http://code.highcharts.com/highcharts.js"></script>
     <script src="skript.js"></script>
     <link rel="stylesheet" href="stil.css" type="text/css" />
 </head>
@@ -35,6 +36,14 @@
                         <li><a href="pacient1.html">Vincenc Caret</a></li>
                         <li class="active"><a href="pacient2.html">Justina Bug</a></li>
                         <li><a href="pacient3.html">Bogomir King</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Dodajanje meritev za<span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><button type="button" class="btn btn-primary btn-xs" id="vMeniju" onclick="dodajMeritveVitalnihZnakovA()">Vincencija</button><span id="dodajMeritveVitalnihZnakovSporocilo"></span></li>
+                        <li><button type="button" class="btn btn-primary btn-xs" id="vMeniju" onclick="dodajMeritveVitalnihZnakovB()">Justino</button><span id="dodajMeritveVitalnihZnakovSporocilo"></span></li>
+                        <li><button type="button" class="btn btn-primary btn-xs" id="vMeniju" onclick="dodajMeritveVitalnihZnakovC()">Bogomirja</button><span id="dodajMeritveVitalnihZnakovSporocilo"></span></li>
                     </ul>
                 </li>
                 <li><a href="#">GEO lokacija bolnišnice</a></li>
@@ -88,8 +97,12 @@
                                 <tr>
                                     <td>Email:</td>
                                     <td><a href="mailto:Justina.Bug@e-zdravje.si">Justina.Bug@e-zdravje.si</a></td>
+                                </tr>
+                                <tr>
+                                    <td>EHR ID:</td>
+                                    <td><div id="preberiEHRid">de74617d-ff0b-49dc-8771-b22377408bcb</div></td>
+                                </tr>
                                 </tbody>
-                                <div id="odmik-top"></div>
                             </table>
                         </div>
                     </div>
@@ -113,26 +126,27 @@
                                 </tr>
                                 <tr>
                                     <th width="20%">višina [cm]</th>
-                                    <td width="20%">visina</td>
+                                    <td width="20%"><div id="visinaPacient"></div></td>
                                     <td width="40%">174</td>
-                                    <td width="20%">visina - 174</td>
+                                    <td width="20%"><div id="visinaOdstopanje"></div></td>
                                 </tr>
                                 <tr>
                                     <th width="20%">teža [kg]</th>
-                                    <td width="20%">teza</td>
+                                    <td width="20%"><div id="tezaPacient"></div></td>
                                     <td width="40%">71</td>
-                                    <td width="20%">teza - 71</td>
+                                    <td width="20%"><div id="tezaOdstopanje"></div></td>
                                 </tr>
                             </table>
+                            <div id="odmik-top"></div>
                             <table class='table table-hover'>
                                 <tr>
-                                    <th width="5%">Imate pogosto slovensko ime:</th>
-                                    <td width="50%">DA / NE</td>
+                                    <th width="50%">Imate pogosto slovensko ime:</th>
+                                    <td width="50%"><div id="pogostoIme"></div></td>
 
                                 </tr>
                                 <tr>
                                     <th width="50%">Zaporedno mesto imena:</th>
-                                    <td width="50%">0 - 200</td>
+                                    <td width="50%"><div id="zaporednoMestoImena"></div></td>
                                 </tr>
                                 <tr>
                                     <th></th>
@@ -158,7 +172,7 @@
                 <div class="panel-body">
                     <div class="row">
                         <div class=" col-md-12 col-lg-12 ">
-                            Vaš ITM znaša: <div class="itm">itm</div>
+                            <button type="button" class="btn btn-primary btn-xs" onclick="izracunajITM()">Izračunaj svoj ITM:</button><div id="itm"></div>
                             <div id="odmik-top-itm"></div>
                             <table class='table table-bordered table-hover'>
                                 <tr>
@@ -166,20 +180,20 @@
                                     <th>Opis</th>
                                 </tr>
                                 <tr>
-                                    <td width="50%">manj kot 18,5</td>
-                                    <td width="50%">premajhna telesna teža</td>
+                                    <td width="50%"><div id="prvicA">manj kot 18,5</div></td>
+                                    <td width="50%"><div id="prvicB">podhranjenost</div></td>
                                 </tr>
                                 <tr>
-                                    <td width="50%">od 18,5 do 25,0</td>
-                                    <td width="50%">normalna telesna teža</td>
+                                    <td width="50%"><div id="drugicA">od 18,5 do 25,0</div></td>
+                                    <td width="50%"><div id="drugicB">normalna telesna teža</div></td>
                                 </tr>
                                 <tr>
-                                    <td width="50%">od 25,1 do 30,0</td>
-                                    <td width="50%">čezmerna telesna teža</td>
+                                    <td width="50%"><div id="tretjicA">od 25,1 do 30,0</div></td>
+                                    <td width="50%"><div id="tretjicB">čezmerna telesna teža</div></td>
                                 </tr>
                                 <tr>
-                                    <td width="50%">30,1 in več</td>
-                                    <td width="50%">debelost</td>
+                                    <td width="50%"><div id="cetrticA">30,1 in več</div></td>
+                                    <td width="50%"><div id="cetrticB">debelost</div></td>
                                 </tr>
                             </table>
                         </div>
@@ -192,12 +206,12 @@
                 <div class="panel-heading">
                     <div class="row">
                         <div class="col-lg-4 col-md-4 col-sm-4">Meritve vitalnih znakov</div>
-                        <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiTipZaVitalneZnake"><option value="telesna višina">telesna višina</option><option value="telesna teža">telesna teža</option><option value="telesna teža AQL">telesna teža (filter na 100 kg)</option><option value="telesna temperatura">telesna temperatura</option><option value="telesna temperatura AQL">telesna temperatura (filter na podhladitev)</option></select></div>
-                        <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiEhrIdZaVitalneZnake"><option value=""></option><option value="b931580f-2b05-488b-985b-8d9ffb08ad02">Justina Bug</option></select></div>
+                        <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiTipZaVitalneZnake"><option value="telesna teža">telesna teža</option><option value="telesna teža AQL">telesna teža (filter na 100 kg)</option><option value="telesna temperatura">telesna temperatura</option><option value="telesna temperatura AQL">telesna temperatura (filter na podhladitev)</option></select></div>
+                        <div class="col-lg-4 col-md-4 col-sm-4"><select class="form-control input-sm" id="preberiEhrIdZaVitalneZnake"><option value=""></option><option value="de74617d-ff0b-49dc-8771-b22377408bcb">Justina</option></select></div>
                     </div>
                 </div>
                 <div class="panel-body">
-                    <span class="label label-default">EHR ID</span><input id="meritveVitalnihZnakovEHRid" type="text" class="form-control input-mini" placeholder="7b661e12-3a98-21ad-c29e-2dc9f5a3d885">
+                    <span class="label label-default">EHR ID</span><input id="meritveVitalnihZnakovEHRid" type="text" class="form-control input-mini" placeholder="de74617d-ff0b-49dc-8771-b22377408bcb"">
                     <button type="button" class="btn btn-primary btn-xs" onclick="preberiMeritveVitalnihZnakov('telesna temperatura')">Preberi meritve vitalnih znakov</button><span id="preberiMeritveVitalnihZnakovSporocilo"></span>
                     <div id="rezultatMeritveVitalnihZnakov"></div>
                 </div>
@@ -209,10 +223,10 @@
 <div id="odmikNE" class="container">
     <div class="row">
         <div class="col-md-6">
-            levi graf
+            <div id="container" style="min-width: 310px; height: 400px; margin-bottom: 20px;"></div>
         </div>
         <div class="col-md-6">
-            desni graf
+            <div id="container2" style="min-width: 310px; height: 400px; margin-bottom: 20px;"></div>
         </div>
     </div>
 </div>
@@ -249,7 +263,7 @@
                     </li>
                 </ul>
                 <div class="todo-footer">
-                    <strong><span class="count-todos"></span></strong>Število opomnikov:
+                    <strong><span class="count-todos"></span></strong> - število preostalih opomnikov
                 </div>
             </div>
         </div>
